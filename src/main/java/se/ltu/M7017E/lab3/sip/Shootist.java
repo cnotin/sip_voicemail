@@ -3,8 +3,6 @@ package se.ltu.M7017E.lab3.sip;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.sip.ClientTransaction;
 import javax.sip.Dialog;
@@ -66,27 +64,6 @@ public class Shootist implements SipListener {
 	private Dialog dialog;
 
 	private boolean byeTaskRunning;
-
-	class ByeTask extends TimerTask {
-		Dialog dialog;
-
-		public ByeTask(Dialog dialog) {
-			this.dialog = dialog;
-		}
-
-		public void run() {
-			try {
-				Request byeRequest = this.dialog.createRequest(Request.BYE);
-				ClientTransaction ct = sipProvider
-						.getNewClientTransaction(byeRequest);
-				dialog.sendRequest(ct);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				System.exit(0);
-			}
-
-		}
-	}
 
 	private static final String usageString = "java "
 			+ "examples.shootist.Shootist \n"
@@ -175,11 +152,7 @@ public class Shootist implements SipListener {
 			}
 			return;
 		}
-		// If the caller is supposed to send the bye
-		if (Shootme.callerSendsBye && !byeTaskRunning) {
-			byeTaskRunning = true;
-			new Timer().schedule(new ByeTask(dialog), 4000);
-		}
+
 		System.out.println("transaction state is " + tid.getState());
 		System.out.println("Dialog = " + tid.getDialog());
 		System.out.println("Dialog State is " + tid.getDialog().getState());
@@ -423,8 +396,20 @@ public class Shootist implements SipListener {
 	}
 
 	public static void main(String args[]) {
-		new Shootist().init();
-
+		Shootist shootist = new Shootist();
+		shootist.init();
+		System.out.println("Bye ?");
+		new java.util.Scanner(System.in).nextLine();
+		try {
+			Request byeRequest = shootist.dialog.createRequest(Request.BYE);
+			ClientTransaction ct = sipProvider
+					.getNewClientTransaction(byeRequest);
+			shootist.dialog.sendRequest(ct);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.exit(0);
+		}
+		System.out.println("Sent bye.");
 	}
 
 	public void processIOException(IOExceptionEvent exceptionEvent) {
