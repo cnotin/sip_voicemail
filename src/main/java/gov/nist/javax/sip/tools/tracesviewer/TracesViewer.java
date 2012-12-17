@@ -488,7 +488,7 @@ public class TracesViewer extends javax.swing.JFrame {
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
 				System.out.println("Trace viewer closed!");
-				// System.exit(0);
+				System.exit(0);
 			}
 		});
 
