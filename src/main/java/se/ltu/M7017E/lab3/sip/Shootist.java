@@ -59,7 +59,7 @@ public class Shootist implements SipListener {
 
 	private ContactHeader contactHeader;
 
-	private ListeningPoint udpListeningPoint;
+	private ListeningPoint tcpListeningPoint;
 
 	private ClientTransaction inviteTid;
 
@@ -289,10 +289,10 @@ public class Shootist implements SipListener {
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
-			udpListeningPoint = sipStack.createListeningPoint("127.0.0.1",
+			tcpListeningPoint = sipStack.createListeningPoint("127.0.0.1",
 					5060, "tcp");
-			System.out.println("listeningPoint = " + udpListeningPoint);
-			sipProvider = sipStack.createSipProvider(udpListeningPoint);
+			System.out.println("listeningPoint = " + tcpListeningPoint);
+			sipProvider = sipStack.createSipProvider(tcpListeningPoint);
 			System.out.println("SipProvider = " + sipProvider);
 			Shootist listener = this;
 			sipProvider.addSipListener(listener);
@@ -329,7 +329,7 @@ public class Shootist implements SipListener {
 			// Create ViaHeaders
 
 			ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
-			String ipAddress = udpListeningPoint.getIPAddress();
+			String ipAddress = tcpListeningPoint.getIPAddress();
 			ViaHeader viaHeader = headerFactory.createViaHeader(ipAddress,
 					sipProvider.getListeningPoint(transport).getPort(),
 					transport, null);
@@ -360,7 +360,7 @@ public class Shootist implements SipListener {
 			String host = "127.0.0.1";
 
 			SipURI contactUrl = addressFactory.createSipURI(fromName, host);
-			contactUrl.setPort(udpListeningPoint.getPort());
+			contactUrl.setPort(tcpListeningPoint.getPort());
 			contactUrl.setLrParam();
 
 			// Create the contact name address.
