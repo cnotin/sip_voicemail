@@ -20,22 +20,18 @@ public class Sender extends Pipeline {
 		encoder.set("vad", true); // voice activity detection
 		encoder.set("dtx", true); // discontinuous transmission
 		Element rtpPay = ElementFactory.make("rtpspeexpay", null);
-		Element udpSink;
-		RTPBin rtpBin;
-		rtpBin = new RTPBin((String) null);
+		RTPBin rtpBin = new RTPBin((String) null);
 
 		// asking this put the gstrtpbin plugin in sender mode
 		Pad rtpSink0 = rtpBin.getRequestPad("send_rtp_sink_0");
 
-		udpSink = ElementFactory.make("udpsink", null);
+		Element udpSink = ElementFactory.make("udpsink", null);
 		udpSink.set("host", ip);
 		udpSink.set("port", port);
 		udpSink.set("async", false);
 
 		// ############## ADD THEM TO PIPELINE ####################
 		addMany(src, decodebin, encoder, rtpPay, rtpBin, udpSink);
-
-		// ###################### LINK THEM ##########################
 
 		// ####################### CONNECT EVENT ######################"
 		decodebin.connect(new Element.PAD_ADDED() {
@@ -47,6 +43,8 @@ public class Sender extends Pipeline {
 								PadLinkReturn.OK));
 			}
 		});
+
+		// ###################### LINK THEM ##########################
 		Tool.successOrDie("src,decodebin", linkMany(src, decodebin));
 		Tool.successOrDie("encoder,rtppay", linkMany(encoder, rtpPay));
 		Tool.successOrDie(

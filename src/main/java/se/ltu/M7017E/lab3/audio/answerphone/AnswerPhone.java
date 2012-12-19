@@ -1,4 +1,4 @@
-package se.ltu.M7017E.lab.audio.answerphone;
+package se.ltu.M7017E.lab3.audio.answerphone;
 
 import org.gstreamer.Bus;
 import org.gstreamer.Gst;

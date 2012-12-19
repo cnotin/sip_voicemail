@@ -16,10 +16,12 @@ public class Receiver extends Pipeline {
 	private Pipeline me = this;
 
 	/**
-	 * save audio from udp into a a file
+	 * Save audio from udp into a a file
+	 * 
+	 * @param receiverName
+	 * @param senderName
 	 */
-
-	public Receiver(String receiver, String sender) {
+	public Receiver(String receiverName, String senderName) {
 		// create a date
 		SimpleDateFormat filenameFormatter = new SimpleDateFormat(
 				"yyyy-MM-dd-HH-mm-ss");
@@ -39,8 +41,8 @@ public class Receiver extends Pipeline {
 		final Element rtpDepay = ElementFactory.make("rtpspeexdepay", null);
 		Element rtpBin = ElementFactory.make("gstrtpbin", null);
 		final Element filesink = ElementFactory.make("filesink", null);
-		filesink.set("location", receiver + "/" + sender + "-" + stringDate
-				+ ".ogg");
+		filesink.set("location", receiverName + "/" + senderName + "-"
+				+ stringDate + ".ogg");
 		final Element oggmux = ElementFactory.make("oggmux", null);
 		final Element speexdec = ElementFactory.make("speexdec", null);
 		final Element speexenc = ElementFactory.make("speexenc", null);
