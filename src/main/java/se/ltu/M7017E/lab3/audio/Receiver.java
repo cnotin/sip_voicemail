@@ -10,6 +10,7 @@ import org.gstreamer.Pad;
 import org.gstreamer.PadLinkReturn;
 import org.gstreamer.Pipeline;
 
+import se.ltu.M7017E.lab3.Config;
 import se.ltu.M7017E.lab3.tools.Tool;
 
 public class Receiver extends Pipeline {
@@ -41,8 +42,8 @@ public class Receiver extends Pipeline {
 		final Element rtpDepay = ElementFactory.make("rtpspeexdepay", null);
 		Element rtpBin = ElementFactory.make("gstrtpbin", null);
 		final Element filesink = ElementFactory.make("filesink", null);
-		filesink.set("location", receiverName + "/" + senderName + "-"
-				+ stringDate + ".ogg");
+		filesink.set("location", Config.MESSAGE_FILES_ROOT + receiverName + "/"
+				+ senderName + "-" + stringDate + ".ogg");
 		final Element oggmux = ElementFactory.make("oggmux", null);
 		final Element speexdec = ElementFactory.make("speexdec", null);
 		final Element speexenc = ElementFactory.make("speexenc", null);
