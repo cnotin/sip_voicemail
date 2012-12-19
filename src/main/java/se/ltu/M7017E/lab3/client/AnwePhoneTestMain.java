@@ -1,6 +1,6 @@
 package se.ltu.M7017E.lab3.client;
 
-import se.ltu.M7017.lab.audio.answerphone.AnswerPhone;
+import se.ltu.M7017E.lab.audio.answerphone.AnswerPhone;
 
 /** Main class for the client. */
 public class AnwePhoneTestMain {
