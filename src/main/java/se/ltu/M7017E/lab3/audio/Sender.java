@@ -7,11 +7,11 @@ import org.gstreamer.PadLinkReturn;
 import org.gstreamer.Pipeline;
 import org.gstreamer.elements.good.RTPBin;
 
-import tools.Tool;
+import se.ltu.M7017E.lab3.tools.Tool;
 
 public class Sender extends Pipeline {
 
-	public Sender() {
+	public Sender(String ip, int port) {
 		Element src = ElementFactory.make("filesrc", null);
 		src.set("location", "answerphone.ogg");
 		Element decodebin = ElementFactory.make("decodebin", null);
@@ -28,8 +28,8 @@ public class Sender extends Pipeline {
 		Pad rtpSink0 = rtpBin.getRequestPad("send_rtp_sink_0");
 
 		udpSink = ElementFactory.make("udpsink", null);
-		udpSink.set("host", "localhost");
-		udpSink.set("port", 5003);
+		udpSink.set("host", ip);
+		udpSink.set("port", port);
 		udpSink.set("async", false);
 
 		// ############## ADD THEM TO PIPELINE ####################

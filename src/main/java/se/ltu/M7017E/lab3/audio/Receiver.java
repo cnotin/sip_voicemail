@@ -10,7 +10,7 @@ import org.gstreamer.Pad;
 import org.gstreamer.PadLinkReturn;
 import org.gstreamer.Pipeline;
 
-import tools.Tool;
+import se.ltu.M7017E.lab3.tools.Tool;
 
 public class Receiver extends Pipeline {
 	private Pipeline me = this;
@@ -26,7 +26,7 @@ public class Receiver extends Pipeline {
 		Date date = new Date();
 		String stringDate = filenameFormatter.format(date);
 		final Element udpSource = ElementFactory.make("udpsrc", null);
-		udpSource.set("port", 5003);
+		udpSource.set("port", 0); // ask for a port
 		Tool.successOrDie("caps",
 				udpSource.getStaticPad("src").setCaps(
 						Caps.fromString("application/x-rtp,"

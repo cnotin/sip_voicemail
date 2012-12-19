@@ -1,4 +1,4 @@
-package tools;
+package se.ltu.M7017E.lab3.tools;
 
 public class Tool {
 	public static void successOrDie(String message, boolean result) {
