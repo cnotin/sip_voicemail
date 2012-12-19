@@ -10,7 +10,6 @@ import javax.sdp.SdpException;
 import javax.sdp.SdpFactory;
 import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
-import javax.sip.Dialog;
 import javax.sip.DialogState;
 import javax.sip.DialogTerminatedEvent;
 import javax.sip.IOExceptionEvent;
@@ -48,9 +47,6 @@ public class MySipListener implements SipListener {
 	private SdpFactory sdpFactory;
 
 	private SipStack sipStack;
-
-	private Request inviteRequest;
-	private Dialog dialog;
 
 	private String myAddress;
 	private int myPort;
@@ -142,7 +138,6 @@ public class MySipListener implements SipListener {
 			if (st == null) {
 				st = sipProvider.getNewServerTransaction(request);
 			}
-			dialog = st.getDialog();
 
 			try {
 				if (st.getState() != TransactionState.COMPLETED) {
@@ -201,7 +196,7 @@ public class MySipListener implements SipListener {
 									+ // originator
 									"s=Voicemail\n"
 									+ // session name
-									"t= 0 0\n"
+									"t=0 0\n"
 									+ "m=audio 5000 RTP/AVP 97\n"
 									+ "a=rtpmap:97 speex/16000\n"
 									+ "a=fmtp:97 mode=\"10,any\"");
@@ -220,7 +215,6 @@ public class MySipListener implements SipListener {
 					response.setContent(serverSdp.toString().getBytes(),
 							headerFactory.createContentTypeHeader(
 									"application", "sdp"));
-					this.inviteRequest = request;
 
 					st.sendResponse(response);
 				}
@@ -263,9 +257,9 @@ public class MySipListener implements SipListener {
 			}
 			Response response = messageFactory.createResponse(200, request);
 			serverTransactionId.sendResponse(response);
-			if (dialog.getState() != DialogState.CONFIRMED) {
+			if (requestEvent.getDialog().getState() != DialogState.CONFIRMED) {
 				response = messageFactory.createResponse(
-						Response.REQUEST_TERMINATED, inviteRequest);
+						Response.REQUEST_TERMINATED, request);
 				requestEvent.getServerTransaction().sendResponse(response);
 			}
 
