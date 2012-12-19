@@ -4,6 +4,9 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Properties;
 
+import javax.sdp.Media;
+import javax.sdp.MediaDescription;
+import javax.sdp.SdpException;
 import javax.sdp.SdpFactory;
 import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
@@ -34,11 +37,6 @@ import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
-/**
- * This class is a UAS template.
- * 
- * @author M. Ranganathan
- */
 public class MySipListener implements SipListener {
 
 	private static AddressFactory addressFactory;
@@ -53,9 +51,7 @@ public class MySipListener implements SipListener {
 
 	private static final String myAddress = "130.240.52.7";
 
-	private static final int myPort = 5070;
-
-	protected ServerTransaction inviteTid;
+	private static final int myPort = 5060;
 
 	private Request inviteRequest;
 
@@ -63,23 +59,30 @@ public class MySipListener implements SipListener {
 
 	public void processRequest(RequestEvent requestEvent) {
 		Request request = requestEvent.getRequest();
-		ServerTransaction serverTransactionId = requestEvent
+		ServerTransaction serverTransaction = requestEvent
 				.getServerTransaction();
 
-		System.out.println("\n\nRequest " + request.getMethod()
-				+ " with server transaction id " + serverTransactionId);
+		if (serverTransaction == null) {
+			System.out.println("Request " + request.getMethod()
+					+ "\twith no server transaction yet");
+		} else {
+			System.out.println("Request " + request.getMethod()
+					+ "\twith server transaction id "
+					+ serverTransaction.getBranchId() + " and dialog id "
+					+ serverTransaction.getDialog().getDialogId());
+		}
 
 		if (request.getMethod().equals(Request.INVITE)) {
-			processInvite(requestEvent, serverTransactionId);
+			processInvite(requestEvent, serverTransaction);
 		} else if (request.getMethod().equals(Request.ACK)) {
-			processAck(requestEvent, serverTransactionId);
+			processAck(requestEvent, serverTransaction);
 		} else if (request.getMethod().equals(Request.BYE)) {
-			processBye(requestEvent, serverTransactionId);
+			processBye(requestEvent, serverTransaction);
 		} else if (request.getMethod().equals(Request.CANCEL)) {
-			processCancel(requestEvent, serverTransactionId);
+			processCancel(requestEvent, serverTransaction);
 		} else {
 			try {
-				serverTransactionId.sendResponse(messageFactory.createResponse(
+				serverTransaction.sendResponse(messageFactory.createResponse(
 						202, request));
 
 				// send one back
@@ -108,8 +111,6 @@ public class MySipListener implements SipListener {
 	 */
 	public void processAck(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
-		System.out.println("got an ACK! ");
-		System.out.println("Dialog State = " + dialog.getState());
 	}
 
 	/**
@@ -120,32 +121,56 @@ public class MySipListener implements SipListener {
 		SipProvider sipProvider = (SipProvider) requestEvent.getSource();
 		Request request = requestEvent.getRequest();
 
-		SessionDescription clientSdp = null;
 		try {
-			clientSdp = sdpFactory.createSessionDescription(new String(request
-					.getRawContent()));
-			// TODO refuse with good http error msg
-		} catch (SdpParseException e) {
-			System.err.println("Content wasn't SDP or malformed SDP");
-			e.printStackTrace();
-		}
-		try {
-			System.out.println("got an Invite and SDP:\n" + clientSdp);
-
 			ServerTransaction st = requestEvent.getServerTransaction();
 
 			if (st == null) {
 				st = sipProvider.getNewServerTransaction(request);
 			}
-			this.inviteTid = st;
 			dialog = st.getDialog();
 
 			try {
-				if (inviteTid.getState() != TransactionState.COMPLETED) {
-					System.out.println("shootme: Dialog state before 200: "
-							+ inviteTid.getDialog().getState());
+				if (st.getState() != TransactionState.COMPLETED) {
+					// get info about client's SDP offer
+					SessionDescription clientSdp = null;
+					try {
+						clientSdp = sdpFactory
+								.createSessionDescription(new String(request
+										.getRawContent()));
 
-					// create sdp offer
+						String address = clientSdp.getOrigin().getAddress();
+
+						int port = -1;
+						for (Object iter : clientSdp
+								.getMediaDescriptions(false)) {
+							Media media = ((MediaDescription) iter).getMedia();
+							if (media.getMediaType().equals("audio")) {
+								port = media.getMediaPort();
+								break;
+							}
+						}
+						if (port != -1) {
+							System.out.println("Client wants sound @ "
+									+ address + ":" + port);
+						} else {
+							System.err
+									.println("Client didn't give any port for audio stream");
+							// TODO cancel everything with appropriate message
+						}
+
+					} catch (SdpParseException e) {
+						// TODO refuse with good http error msg
+						System.err
+								.println("Content wasn't SDP or malformed SDP");
+						e.printStackTrace();
+					} catch (SdpException e) {
+						// TODO refuse with good http error msg
+						System.err
+								.println("Content wasn't SDP or malformed SDP");
+						e.printStackTrace();
+					}
+
+					// create my SDP offer
 					SessionDescription serverSdp = sdpFactory
 							.createSessionDescription("v=0\n"// protocol version
 									+ "o=Voicemail "
@@ -183,9 +208,6 @@ public class MySipListener implements SipListener {
 					this.inviteRequest = request;
 
 					st.sendResponse(response);
-
-					System.out.println("shootme: Dialog state after 200: "
-							+ inviteTid.getDialog().getState());
 				}
 			} catch (SipException ex) {
 				ex.printStackTrace();
@@ -203,16 +225,10 @@ public class MySipListener implements SipListener {
 	 */
 	public void processBye(RequestEvent requestEvent,
 			ServerTransaction serverTransactionId) {
-		SipProvider sipProvider = (SipProvider) requestEvent.getSource();
 		Request request = requestEvent.getRequest();
-		Dialog dialog = requestEvent.getDialog();
-		System.out.println("local party = " + dialog.getLocalParty());
 		try {
-			System.out.println("shootme:  got a bye sending OK.");
 			Response response = messageFactory.createResponse(200, request);
 			serverTransactionId.sendResponse(response);
-			System.out.println("Dialog State is "
-					+ serverTransactionId.getDialog().getState());
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -223,12 +239,11 @@ public class MySipListener implements SipListener {
 
 	public void processCancel(RequestEvent requestEvent,
 			ServerTransaction serverTransactionId) {
-		SipProvider sipProvider = (SipProvider) requestEvent.getSource();
 		Request request = requestEvent.getRequest();
 		try {
-			System.out.println("shootme:  got a cancel.");
 			if (serverTransactionId == null) {
-				System.out.println("shootme:  null tid.");
+				System.err
+						.println("Got a cancel for an unexisting transaction");
 				return;
 			}
 			Response response = messageFactory.createResponse(200, request);
@@ -236,7 +251,7 @@ public class MySipListener implements SipListener {
 			if (dialog.getState() != DialogState.CONFIRMED) {
 				response = messageFactory.createResponse(
 						Response.REQUEST_TERMINATED, inviteRequest);
-				inviteTid.sendResponse(response);
+				requestEvent.getServerTransaction().sendResponse(response);
 			}
 
 		} catch (Exception ex) {
@@ -253,16 +268,14 @@ public class MySipListener implements SipListener {
 		} else {
 			transaction = timeoutEvent.getClientTransaction();
 		}
-		System.out.println("state = " + transaction.getState());
-		System.out.println("dialog = " + transaction.getDialog());
-		System.out.println("dialogState = "
+		System.out.println("Transaction timeout, state = "
+				+ transaction.getState() + ", dialog = "
+				+ transaction.getDialog() + ", dialogState = "
 				+ transaction.getDialog().getState());
-		System.out.println("Transaction Time out");
 	}
 
 	public void processIOException(IOExceptionEvent exceptionEvent) {
-		System.out.println("IOException");
-
+		System.err.println("IOException");
 	}
 
 	public void init() {
@@ -283,7 +296,6 @@ public class MySipListener implements SipListener {
 		try {
 			// Create SipStack object
 			sipStack = sipFactory.createSipStack(properties);
-			System.out.println("sipStack = " + sipStack);
 		} catch (PeerUnavailableException e) {
 			// could not find
 			// gov.nist.jain.protocol.ip.sip.SipStackImpl
@@ -306,11 +318,10 @@ public class MySipListener implements SipListener {
 			MySipListener listener = this;
 
 			SipProvider sipProvider = sipStack.createSipProvider(lp);
-			System.out.println("udp provider " + sipProvider);
 			sipProvider.addSipListener(listener);
 
 		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
+			System.err.println(ex.getMessage());
 			ex.printStackTrace();
 		}
 
@@ -319,20 +330,19 @@ public class MySipListener implements SipListener {
 	public void processTransactionTerminated(
 			TransactionTerminatedEvent transactionTerminatedEvent) {
 		if (transactionTerminatedEvent.isServerTransaction())
-			System.out.println("Transaction terminated event recieved"
-					+ transactionTerminatedEvent.getServerTransaction());
+			System.out.println("Transaction terminated event received "
+					+ transactionTerminatedEvent.getServerTransaction()
+							.getBranchId());
 		else
 			System.out.println("Transaction terminated "
-					+ transactionTerminatedEvent.getClientTransaction());
+					+ transactionTerminatedEvent.getClientTransaction()
+							.getBranchId());
 
 	}
 
 	public void processDialogTerminated(
 			DialogTerminatedEvent dialogTerminatedEvent) {
 		System.out.println("Dialog terminated event recieved");
-		Dialog d = dialogTerminatedEvent.getDialog();
-		System.out.println("Local Party = " + d.getLocalParty());
-
 	}
 
 }
