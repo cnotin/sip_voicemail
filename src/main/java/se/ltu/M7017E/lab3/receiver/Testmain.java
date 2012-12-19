@@ -10,7 +10,7 @@ public class Testmain {
 		Gst.init("Receiver", new String[] { "--gst-debug-level=3",
 				"--gst-debug=liveadder:2", "--gst-debug=basesrc:2",
 				"--gst-debug-no-color" });
-		Receiver rec = new Receiver("senderCat", "receiverCat");
+		Receiver rec = new Receiver("receiverCat", "senderCat");
 		rec.play();
 		try {
 			Thread.sleep(10000);

@@ -12,9 +12,9 @@ public class Main {
 				"--gst-debug=liveadder:2", "--gst-debug=basesrc:2",
 				"--gst-debug-no-color" });
 		Sender sender = new Sender();
+		System.out.println("1234");
 		sender.play();
-		System.out.println("test");
-		while (true)
-			;
+		System.out.println("12345");
+		Gst.main();
 	}
 }
