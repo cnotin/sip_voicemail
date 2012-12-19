@@ -37,25 +37,40 @@ import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
+/**
+ * Main SIP listener class, inspired by an example found in the NIST
+ * implementation of JAIN-SIP.
+ */
 public class MySipListener implements SipListener {
+	private AddressFactory addressFactory;
+	private MessageFactory messageFactory;
+	private HeaderFactory headerFactory;
+	private SdpFactory sdpFactory;
 
-	private static AddressFactory addressFactory;
-
-	private static MessageFactory messageFactory;
-
-	private static HeaderFactory headerFactory;
-
-	private static SdpFactory sdpFactory;
-
-	private static SipStack sipStack;
-
-	private static final String myAddress = "130.240.52.7";
-
-	private static final int myPort = 5060;
+	private SipStack sipStack;
 
 	private Request inviteRequest;
-
 	private Dialog dialog;
+
+	private String myAddress;
+	private int myPort;
+
+	/**
+	 * Create a SIP listener and launch the associated SIP stack.
+	 * 
+	 * @param myAddress
+	 *            my IP address, will be sent to clients so it's better to use a
+	 *            public and reachable address for them
+	 * @param myPort
+	 *            listening port for this SIP server, recommended for SIP is UDP
+	 *            5060
+	 */
+	public MySipListener(String myAddress, int myPort) {
+		this.myAddress = myAddress;
+		this.myPort = myPort;
+
+		sipInit();
+	}
 
 	public void processRequest(RequestEvent requestEvent) {
 		Request request = requestEvent.getRequest();
@@ -109,14 +124,14 @@ public class MySipListener implements SipListener {
 	/**
 	 * Process the ACK request.
 	 */
-	public void processAck(RequestEvent requestEvent,
+	private void processAck(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
 	}
 
 	/**
 	 * Process the invite request.
 	 */
-	public void processInvite(RequestEvent requestEvent,
+	private void processInvite(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
 		SipProvider sipProvider = (SipProvider) requestEvent.getSource();
 		Request request = requestEvent.getRequest();
@@ -223,7 +238,7 @@ public class MySipListener implements SipListener {
 	/**
 	 * Process the bye request.
 	 */
-	public void processBye(RequestEvent requestEvent,
+	private void processBye(RequestEvent requestEvent,
 			ServerTransaction serverTransactionId) {
 		Request request = requestEvent.getRequest();
 		try {
@@ -237,7 +252,7 @@ public class MySipListener implements SipListener {
 		}
 	}
 
-	public void processCancel(RequestEvent requestEvent,
+	private void processCancel(RequestEvent requestEvent,
 			ServerTransaction serverTransactionId) {
 		Request request = requestEvent.getRequest();
 		try {
@@ -278,7 +293,7 @@ public class MySipListener implements SipListener {
 		System.err.println("IOException");
 	}
 
-	public void init() {
+	private void sipInit() {
 		SipFactory sipFactory = null;
 		sipStack = null;
 		sipFactory = SipFactory.getInstance();
@@ -344,5 +359,4 @@ public class MySipListener implements SipListener {
 			DialogTerminatedEvent dialogTerminatedEvent) {
 		System.out.println("Dialog terminated event recieved");
 	}
-
 }
