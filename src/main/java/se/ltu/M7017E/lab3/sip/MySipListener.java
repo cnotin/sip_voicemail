@@ -36,6 +36,8 @@ import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
+import se.ltu.M7017E.lab3.App;
+
 /**
  * Main SIP listener class, inspired by an example found in the NIST
  * implementation of JAIN-SIP.
@@ -50,6 +52,7 @@ public class MySipListener implements SipListener {
 
 	private String myAddress;
 	private int myPort;
+	private App app;
 
 	/**
 	 * Create a SIP listener and launch the associated SIP stack.
@@ -60,11 +63,14 @@ public class MySipListener implements SipListener {
 	 * @param myPort
 	 *            listening port for this SIP server, recommended for SIP is UDP
 	 *            5060
+	 * @param app
 	 */
-	public MySipListener(String myAddress, int myPort) {
+	public MySipListener(String myAddress, int myPort, App app) {
 		this.myAddress = myAddress;
 		this.myPort = myPort;
+		this.app = app;
 
+		System.out.println("Listening on " + myAddress + ":" + myPort);
 		sipInit();
 	}
 
@@ -162,6 +168,7 @@ public class MySipListener implements SipListener {
 						if (port != -1) {
 							System.out.println("Client wants sound @ "
 									+ address + ":" + port);
+							app.doAnswerPhone(address, port);
 						} else {
 							System.err
 									.println("Client didn't give any port for audio stream");
@@ -197,9 +204,9 @@ public class MySipListener implements SipListener {
 									"s=Voicemail\n"
 									+ // session name
 									"t=0 0\n"
-									+ "m=audio 5000 RTP/AVP 97\n"
-									+ "a=rtpmap:97 speex/16000\n"
-									+ "a=fmtp:97 mode=\"10,any\"");
+									+ "m=audio 5000 RTP/AVP 96\n"
+									+ "a=rtpmap:96 speex/16000\n"
+									+ "a=fmtp:96 mode=\"10,any\"");
 
 					Response response = messageFactory.createResponse(
 							Response.OK, request);
@@ -333,7 +340,7 @@ public class MySipListener implements SipListener {
 			System.err.println(ex.getMessage());
 			ex.printStackTrace();
 		}
-
+		System.out.println("SIP init completed");
 	}
 
 	public void processTransactionTerminated(

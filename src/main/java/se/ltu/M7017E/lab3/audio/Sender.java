@@ -15,6 +15,7 @@ public class Sender extends Pipeline {
 		Element src = ElementFactory.make("filesrc", null);
 		src.set("location", "answerphone.ogg");
 		Element decodebin = ElementFactory.make("decodebin", null);
+		final Element audioconvert = ElementFactory.make("audioconvert", null);
 		final Element encoder = ElementFactory.make("speexenc", null);
 		encoder.set("quality", 6); // quality in [0,10]
 		encoder.set("vad", true); // voice activity detection
@@ -31,22 +32,24 @@ public class Sender extends Pipeline {
 		udpSink.set("async", false);
 
 		// ############## ADD THEM TO PIPELINE ####################
-		addMany(src, decodebin, encoder, rtpPay, rtpBin, udpSink);
+		addMany(src, decodebin, audioconvert, encoder, rtpPay, rtpBin, udpSink);
 
 		// ####################### CONNECT EVENT ######################"
 		decodebin.connect(new Element.PAD_ADDED() {
 			public void padAdded(Element element, Pad pad) {
 				System.out.println("\nGot new input pad: " + pad);
 				Tool.successOrDie(
-						"decodebin-encoder",
-						pad.link(encoder.getStaticPad("sink")).equals(
+						"decodebin-audioconvert",
+						pad.link(audioconvert.getStaticPad("sink")).equals(
 								PadLinkReturn.OK));
 			}
 		});
 
 		// ###################### LINK THEM ##########################
 		Tool.successOrDie("src,decodebin", linkMany(src, decodebin));
-		Tool.successOrDie("encoder,rtppay", linkMany(encoder, rtpPay));
+
+		Tool.successOrDie("audioconvert,encoder,rtppay",
+				linkMany(audioconvert, encoder, rtpPay));
 		Tool.successOrDie(
 				"rtppay-rtpbin",
 				rtpPay.getStaticPad("src").link(rtpSink0)
