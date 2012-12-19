@@ -1,4 +1,4 @@
-package se.ltu.M7017E.lab3.sip;
+package gov.nist.javax.sip.examples;
 
 import java.text.ParseException;
 import java.util.ArrayList;
