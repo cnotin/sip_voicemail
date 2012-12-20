@@ -4,11 +4,6 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.Properties;
 
-import javax.sdp.Media;
-import javax.sdp.MediaDescription;
-import javax.sdp.SdpException;
-import javax.sdp.SdpFactory;
-import javax.sdp.SdpParseException;
 import javax.sdp.SessionDescription;
 import javax.sip.DialogState;
 import javax.sip.DialogTerminatedEvent;
@@ -46,7 +41,7 @@ public class MySipListener implements SipListener {
 	private AddressFactory addressFactory;
 	private MessageFactory messageFactory;
 	private HeaderFactory headerFactory;
-	private SdpFactory sdpFactory;
+	private SdpTool sdpTool;
 
 	private SipStack sipStack;
 
@@ -149,64 +144,49 @@ public class MySipListener implements SipListener {
 				if (st.getState() != TransactionState.COMPLETED) {
 					// get info about client's SDP offer
 					SessionDescription clientSdp = null;
-					try {
-						clientSdp = sdpFactory
-								.createSessionDescription(new String(request
-										.getRawContent()));
+					clientSdp = sdpTool.fromString(new String(request
+							.getRawContent()));
 
-						String address = clientSdp.getOrigin().getAddress();
+					String clientAddr = sdpTool.getIpAddress(clientSdp);
 
-						System.out.println("Client SDP medias "
-								+ clientSdp.getMediaDescriptions(false)
-										.toString());
+					System.out.println("Client SDP medias "
+							+ clientSdp.getMediaDescriptions(false).toString());
 
-						int port = -1;
-						for (Object iter : clientSdp
-								.getMediaDescriptions(false)) {
-							Media media = ((MediaDescription) iter).getMedia();
-							if (media.getMediaType().equals("audio")) {
-								port = media.getMediaPort();
-								break;
-							}
-						}
-						if (port != -1) {
-							System.out.println("Client wants sound @ "
-									+ address + ":" + port);
-							app.doAnswerPhone(address, port);
-						} else {
-							System.err
-									.println("Client didn't give any port for audio stream");
-							// TODO cancel everything with appropriate message
-						}
+					int myPort = -1;
 
-					} catch (SdpParseException e) {
-						// TODO refuse with good http error msg
+					int port = sdpTool.getAudioMediaPort(clientSdp);
+					if (port != -1) {
+						System.out.println("Client wants sound @ " + clientAddr
+								+ ":" + port);
+						myPort = app.doAnswerPhone(clientAddr, port);
+					} else {
 						System.err
-								.println("Content wasn't SDP or malformed SDP");
-						e.printStackTrace();
-					} catch (SdpException e) {
-						// TODO refuse with good http error msg
-						System.err
-								.println("Content wasn't SDP or malformed SDP");
-						e.printStackTrace();
+								.println("Client didn't give any port for audio stream");
+						// TODO cancel everything with appropriate message
 					}
 
 					// create my SDP offer
-					SessionDescription serverSdp = sdpFactory
-							.createSessionDescription("v=0\n"// protocol version
-									+ "o=Voicemail "
-									+ new Date().getTime()
-									+ " " + new Date().getTime()
-									+ " IN IP4 "
-									+ myAddress + "\n"
-									+ "c= IN IP4 "
-									+ myAddress + "\n"
-									+ // originator
-									"s=Voicemail\n"
-									+ // session name
-									"t=0 0\n"
-									+ "m=audio 5000 RTP/AVP 96\n"
-									+ "a=rtpmap:96 speex/16000");
+					SessionDescription serverSdp = sdpTool.fromString("v=0\n"// protocol
+																				// version
+							+ "o=Voicemail "
+							+ new Date().getTime()
+							+ " "
+							+ new Date().getTime()
+							+ " IN IP4 "
+							+ myAddress
+							+ "\n" + "c= IN IP4 "
+							+ myAddress
+							+ "\n"
+							+ // originator
+							"s=Voicemail\n"
+							+ // session name
+							"t=0 0\n" + "m=audio "
+							+ myPort
+							+ " RTP/AVP 96\n"
+							+ "a=rtcp:"
+							+ (myPort + 1)
+							+ "\n"
+							+ "a=rtpmap:96 speex/16000");
 					// + "a=fmtp:100 mode=\"10,any\"");
 
 					Response response = messageFactory.createResponse(
@@ -328,7 +308,7 @@ public class MySipListener implements SipListener {
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
-			sdpFactory = SdpFactory.getInstance();
+			sdpTool = new SdpTool();
 			ListeningPoint lp = sipStack.createListeningPoint(myAddress,
 					myPort, "udp");
 
