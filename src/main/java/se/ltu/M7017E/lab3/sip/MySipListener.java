@@ -152,13 +152,12 @@ public class MySipListener implements SipListener {
 					System.out.println("Client SDP medias "
 							+ clientSdp.getMediaDescriptions(false).toString());
 
-					int myPort = -1;
-
+					int myRtpListenPort = -1;
 					int port = sdpTool.getAudioMediaPort(clientSdp);
 					if (port != -1) {
 						System.out.println("Client wants sound @ " + clientAddr
 								+ ":" + port);
-						myPort = app.doAnswerPhone(clientAddr, port);
+						myRtpListenPort = app.doAnswerPhone(clientAddr, port);
 					} else {
 						System.err
 								.println("Client didn't give any port for audio stream");
@@ -174,17 +173,19 @@ public class MySipListener implements SipListener {
 							+ new Date().getTime()
 							+ " IN IP4 "
 							+ myAddress
-							+ "\n" + "c= IN IP4 "
+							+ "\n"
+							+ "c= IN IP4 "
 							+ myAddress
 							+ "\n"
 							+ // originator
 							"s=Voicemail\n"
 							+ // session name
-							"t=0 0\n" + "m=audio "
-							+ myPort
+							"t=0 0\n"
+							+ "m=audio "
+							+ myRtpListenPort
 							+ " RTP/AVP 96\n"
 							+ "a=rtcp:"
-							+ (myPort + 1)
+							+ (myRtpListenPort + 1)
 							+ "\n"
 							+ "a=rtpmap:96 speex/16000");
 					// + "a=fmtp:100 mode=\"10,any\"");
@@ -193,7 +194,7 @@ public class MySipListener implements SipListener {
 							Response.OK, request);
 					Address address = addressFactory
 							.createAddress("Voicemail <sip:" + myAddress + ":"
-									+ myPort + ">");
+									+ myRtpListenPort + ">");
 					ContactHeader contactHeader = headerFactory
 							.createContactHeader(address);
 					response.addHeader(contactHeader);

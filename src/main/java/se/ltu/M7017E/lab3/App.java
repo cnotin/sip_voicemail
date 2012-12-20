@@ -27,20 +27,22 @@ public class App {
 	 *            contact's remote IP to send stream to
 	 * @param port
 	 *            contact's remote port to send stream to
+	 * @return automatically attributed port for incoming stream
 	 */
-	public void doAnswerPhone(String ip, int port) {
+	public int doAnswerPhone(String ip, int port) {
+		final Receiver receiver = new Receiver("ReceiverCat", "SenderCat");
+
 		final Sender sender = new Sender(ip, port);
 		sender.getBus().connect(new Bus.EOS() {
-
 			public void endOfStream(GstObject source) {
 				System.out.println("travail terminééééééé");
-
 				sender.stop();
-				Receiver receiver = new Receiver("ReceiverCat", "SenderCat");
 				receiver.play();
 				// and then the user can talk for his message
 			}
 		});
 		sender.play();
+
+		return receiver.getPort();
 	}
 }

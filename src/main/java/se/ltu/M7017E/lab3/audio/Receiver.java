@@ -3,6 +3,8 @@ package se.ltu.M7017E.lab3.audio;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import lombok.Getter;
+
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
@@ -14,7 +16,9 @@ import se.ltu.M7017E.lab3.Config;
 import se.ltu.M7017E.lab3.tools.Tool;
 
 public class Receiver extends Pipeline {
-	private Pipeline me = this;
+	/** UDP port that has been automatically assigned from available ones */
+	@Getter
+	private int port = 0;
 
 	/**
 	 * Save audio from udp into a a file
@@ -28,16 +32,16 @@ public class Receiver extends Pipeline {
 				"yyyy-MM-dd-HH-mm-ss");
 		Date date = new Date();
 		String stringDate = filenameFormatter.format(date);
-		final Element udpSource = ElementFactory.make("udpsrc", null);
-		udpSource.set("port", 0); // ask for a port
+		final Element rtpSource = ElementFactory.make("udpsrc", null);
+		rtpSource.set("port", 0); // ask for a port
 		Tool.successOrDie("caps",
-				udpSource.getStaticPad("src").setCaps(
+				rtpSource.getStaticPad("src").setCaps(
 						Caps.fromString("application/x-rtp,"
 								+ "media=(string)audio,"
 								+ "clock-rate=(int)16000,"
 								+ "encoding-name=(string)SPEEX, "
 								+ "encoding-params=(string)1, "
-								+ "payload=(int)110")));
+								+ "payload=(int)96")));
 
 		final Element rtpDepay = ElementFactory.make("rtpspeexdepay", null);
 		Element rtpBin = ElementFactory.make("gstrtpbin", null);
@@ -49,7 +53,7 @@ public class Receiver extends Pipeline {
 		final Element speexenc = ElementFactory.make("speexenc", null);
 
 		// ############## ADD THEM TO PIPELINE ####################
-		addMany(udpSource, rtpBin, speexdec, speexenc, oggmux, filesink);
+		addMany(rtpSource, rtpBin, speexdec, speexenc, oggmux, filesink);
 
 		// ####################### CONNECT EVENTS ######################"
 		rtpBin.connect(new Element.PAD_ADDED() {
@@ -58,7 +62,7 @@ public class Receiver extends Pipeline {
 				if (pad.getName().startsWith("recv_rtp_src")) {
 
 					System.out.println("\nGot new input pad: " + pad);
-					me.add(rtpDepay);
+					Receiver.this.add(rtpDepay);
 					rtpDepay.syncStateWithParent();
 
 					Tool.successOrDie("rtpDepay-speexdec",
@@ -80,8 +84,21 @@ public class Receiver extends Pipeline {
 		Pad pad = rtpBin.getRequestPad("recv_rtp_sink_0");
 
 		Tool.successOrDie("oggmux-sink", Element.linkMany(oggmux, filesink));
-		Tool.successOrDie("udpSource-rtpbin", udpSource.getStaticPad("src")
+		Tool.successOrDie("udpSource-rtpbin", rtpSource.getStaticPad("src")
 				.link(pad).equals(PadLinkReturn.OK));
 
+		pause();
+
+		port = (Integer) rtpSource.get("port");
+
+		final Element rtcpSource = ElementFactory.make("udpsrc", null);
+		rtcpSource.set("port", port + 1);
+		addMany(rtcpSource);
+		Tool.successOrDie(
+				"rtcpSource-rtpbin",
+				rtcpSource.getStaticPad("src")
+						.link(rtpBin.getRequestPad("recv_rtcp_sink_0"))
+						.equals(PadLinkReturn.OK));
 	}
+
 }
