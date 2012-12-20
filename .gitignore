@@ -5,3 +5,5 @@
 .*
 /target
 /*.txt
+*.ogg
+*.ogg.bak
