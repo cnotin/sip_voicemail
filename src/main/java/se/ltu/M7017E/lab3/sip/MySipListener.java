@@ -156,6 +156,10 @@ public class MySipListener implements SipListener {
 
 						String address = clientSdp.getOrigin().getAddress();
 
+						System.out.println("Client SDP medias "
+								+ clientSdp.getMediaDescriptions(false)
+										.toString());
+
 						int port = -1;
 						for (Object iter : clientSdp
 								.getMediaDescriptions(false)) {
@@ -192,21 +196,18 @@ public class MySipListener implements SipListener {
 							.createSessionDescription("v=0\n"// protocol version
 									+ "o=Voicemail "
 									+ new Date().getTime()
-									+ " "
-									+ new Date().getTime()
+									+ " " + new Date().getTime()
 									+ " IN IP4 "
-									+ myAddress
-									+ "\n"
+									+ myAddress + "\n"
 									+ "c= IN IP4 "
-									+ myAddress
-									+ "\n"
+									+ myAddress + "\n"
 									+ // originator
 									"s=Voicemail\n"
 									+ // session name
 									"t=0 0\n"
 									+ "m=audio 5000 RTP/AVP 96\n"
-									+ "a=rtpmap:96 speex/16000\n"
-									+ "a=fmtp:96 mode=\"10,any\"");
+									+ "a=rtpmap:96 speex/16000");
+					// + "a=fmtp:100 mode=\"10,any\"");
 
 					Response response = messageFactory.createResponse(
 							Response.OK, request);

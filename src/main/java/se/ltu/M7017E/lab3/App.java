@@ -12,7 +12,6 @@ import se.ltu.M7017E.lab3.sip.MySipListener;
 
 @Getter
 public class App {
-
 	public App(String ipAddr) {
 		// ############ GSTREAMER STUFF ###############
 		Gst.init("SIP Voicemail", new String[] { "--gst-debug-level=3",
