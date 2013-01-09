@@ -5,7 +5,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
-import java.util.Enumeration;
+import java.util.List;
 
 public class Main {
 	public static void main(String[] args) {
@@ -14,7 +14,7 @@ public class Main {
 		String myIp = getMyIp();
 		if (myIp == null) {
 			System.err
-					.println("Unable to find my IPv4 address for any interface which names begins with 'eth'");
+					.println("Unable to find an IPv4 address for any interface");
 			System.exit(-1);
 		}
 		// launch App
@@ -27,26 +27,33 @@ public class Main {
 	}
 
 	/**
-	 * Get my IPv4 address for the first interface which name begins with "eth"
+	 * Get my IPv4 address for the first interface which name begins with one of
+	 * the defined prefixes ("eth", "wlan", or ?)
 	 * 
 	 * @return the IP, eg "130.240.52.7", or null if not found
 	 */
 	private static String getMyIp() {
-		Enumeration<NetworkInterface> interfaces = null;
+		List<NetworkInterface> interfaces = null;
 		try {
-			interfaces = NetworkInterface.getNetworkInterfaces();
+			interfaces = Collections.list(NetworkInterface
+					.getNetworkInterfaces());
 		} catch (SocketException e) {
 			System.err
 					.println("Got a problem while trying to get my IP address, leaving");
 			e.printStackTrace();
 			System.exit(-1);
 		}
-		for (NetworkInterface netint : Collections.list(interfaces)) {
-			if (netint.getName().startsWith("eth")) {
-				for (InetAddress addr : Collections.list(netint
-						.getInetAddresses())) {
-					if (addr instanceof Inet4Address) {
-						return addr.getHostAddress();
+
+		// try to find an interface with IPv4 for different prefixes
+		String[] prefixes = { "eth", "wlan" };
+		for (String prefix : prefixes) {
+			for (NetworkInterface netint : interfaces) {
+				if (netint.getName().startsWith(prefix)) {
+					for (InetAddress addr : Collections.list(netint
+							.getInetAddresses())) {
+						if (addr instanceof Inet4Address) {
+							return addr.getHostAddress();
+						}
 					}
 				}
 			}
