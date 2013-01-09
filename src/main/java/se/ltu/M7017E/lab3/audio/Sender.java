@@ -13,20 +13,24 @@ import se.ltu.M7017E.lab3.tools.Tool;
 public class Sender extends Pipeline {
 
 	public Sender(String ip, int port) {
+		super();
+
 		Element src = ElementFactory.make("filesrc", null);
 		src.set("location", "answerphone.ogg");
 		Element decodebin = ElementFactory.make("decodebin", null);
 		final Element audioconvert = ElementFactory.make("audioconvert", null);
+		final Element audioresample = ElementFactory
+				.make("audioresample", null);
 		Element capsRateFilter = ElementFactory.make("capsfilter", null);
-		capsRateFilter.setCaps(Caps.fromString("rate=16000"));
+		capsRateFilter.setCaps(Caps.fromString("audio/x-raw-int,rate=16000"));
 		final Element encoder = ElementFactory.make("speexenc", null);
 		encoder.set("quality", 6); // quality in [0,10]
-		encoder.set("vad", false); // voice activity detection
-		encoder.set("dtx", false); // discontinuous transmission
+		encoder.set("vad", true); // voice activity detection
+		encoder.set("dtx", true); // discontinuous transmission
 		Element rtpPay = ElementFactory.make("rtpspeexpay", null);
 		Element capsRtpFilter = ElementFactory.make("capsfilter", null);
 		capsRtpFilter.setCaps(Caps.fromString("application/x-rtp,"
-				+ "payload=(int)113"));
+				+ "payload=(int)96"));
 		RTPBin rtpBin = new RTPBin((String) null);
 
 		// asking this put the gstrtpbin plugin in sender mode
@@ -38,8 +42,8 @@ public class Sender extends Pipeline {
 		udpSink.set("async", false);
 
 		// ############## ADD THEM TO PIPELINE ####################
-		addMany(src, decodebin, audioconvert, capsRateFilter, encoder, rtpPay,
-				capsRtpFilter, rtpBin, udpSink);
+		addMany(src, decodebin, audioconvert, audioresample, capsRateFilter,
+				encoder, rtpPay, capsRtpFilter, rtpBin, udpSink);
 
 		// ####################### CONNECT EVENT ######################"
 		decodebin.connect(new Element.PAD_ADDED() {
@@ -56,9 +60,9 @@ public class Sender extends Pipeline {
 		Tool.successOrDie("src,decodebin", linkMany(src, decodebin));
 
 		Tool.successOrDie(
-				"audioconvert,capsRateFilter,encoder,rtppay,capsFilter",
-				linkMany(audioconvert, capsRateFilter, encoder, rtpPay,
-						capsRtpFilter));
+				"audioconvert,audioresample,capsRateFilter,encoder,rtppay,capsFilter",
+				linkMany(audioconvert, audioresample, capsRateFilter, encoder,
+						rtpPay, capsRtpFilter));
 		Tool.successOrDie("capsfilter-rtpbin", capsRtpFilter
 				.getStaticPad("src").link(rtpSink0).equals(PadLinkReturn.OK));
 		Tool.successOrDie(

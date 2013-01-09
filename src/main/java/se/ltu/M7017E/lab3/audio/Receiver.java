@@ -27,6 +27,8 @@ public class Receiver extends Pipeline {
 	 * @param senderName
 	 */
 	public Receiver(String receiverName, String senderName) {
+		super();
+
 		// create a date
 		SimpleDateFormat filenameFormatter = new SimpleDateFormat(
 				"yyyy-MM-dd-HH-mm-ss");

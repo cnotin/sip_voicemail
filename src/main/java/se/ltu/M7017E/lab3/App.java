@@ -39,7 +39,6 @@ public class App {
 		final Sender sender = new Sender(ip, port);
 		sender.getBus().connect(new Bus.EOS() {
 			public void endOfStream(GstObject source) {
-				System.out.println("travail terminééééééé");
 				sender.stop();
 				receiver.play();
 				// and then the user can talk for his message
