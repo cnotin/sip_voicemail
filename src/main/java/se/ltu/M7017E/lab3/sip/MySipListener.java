@@ -1,5 +1,7 @@
 package se.ltu.M7017E.lab3.sip;
 
+import gov.nist.javax.sip.address.SipUri;
+
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Properties;
@@ -25,6 +27,7 @@ import javax.sip.TransactionTerminatedEvent;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
 import javax.sip.header.ContactHeader;
+import javax.sip.header.FromHeader;
 import javax.sip.header.HeaderFactory;
 import javax.sip.header.ToHeader;
 import javax.sip.message.MessageFactory;
@@ -157,7 +160,15 @@ public class MySipListener implements SipListener {
 					if (port != -1) {
 						System.out.println("Client wants sound @ " + clientAddr
 								+ ":" + port);
-						myRtpListenPort = app.doAnswerPhone(clientAddr, port);
+
+						String callee = ((SipUri) ((ToHeader) request
+								.getHeader("to")).getAddress().getURI())
+								.getAuthority().getUser();
+						String caller = ((SipUri) ((FromHeader) request
+								.getHeader("from")).getAddress().getURI())
+								.getAuthority().getUser();
+						myRtpListenPort = app.doAnswerPhone(clientAddr, port,
+								callee, caller);
 					} else {
 						System.err
 								.println("Client didn't give any port for audio stream");

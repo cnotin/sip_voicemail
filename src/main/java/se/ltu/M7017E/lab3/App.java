@@ -27,10 +27,14 @@ public class App {
 	 *            contact's remote IP to send stream to
 	 * @param port
 	 *            contact's remote port to send stream to
+	 * @param callee
+	 *            SIP name of the person who was called
+	 * @param caller
+	 *            SIP name of the person who called
 	 * @return automatically attributed port for incoming stream
 	 */
-	public int doAnswerPhone(String ip, int port) {
-		final Receiver receiver = new Receiver("ReceiverCat", "SenderCat");
+	public int doAnswerPhone(String ip, int port, String callee, String caller) {
+		final Receiver receiver = new Receiver(callee, caller);
 
 		final Sender sender = new Sender(ip, port);
 		sender.getBus().connect(new Bus.EOS() {
