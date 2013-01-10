@@ -85,7 +85,7 @@ public class Receiver extends Pipeline {
 						.linkMany(rtpDepay, speexdec, audioresample,
 								audioconvert, speexenc, oggmux, filesink));
 
-		pause();
+		play();
 		port = (Integer) rtpSource.get("port");
 
 		// final Element rtcpSource = ElementFactory.make("udpsrc", null);
