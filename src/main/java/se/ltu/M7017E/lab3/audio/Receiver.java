@@ -45,36 +45,29 @@ public class Receiver extends Pipeline {
 								+ "encoding-params=(string)1, "
 								+ "payload=(int)96")));
 
+		final Element rtpBin = ElementFactory.make("gstrtpbin", null);
 		final Element rtpDepay = ElementFactory.make("rtpspeexdepay", null);
-		Element rtpBin = ElementFactory.make("gstrtpbin", null);
+		final Element speexdec = ElementFactory.make("speexdec", null);
+		final Element audioresample = ElementFactory
+				.make("audioresample", null);
+		final Element audioconvert = ElementFactory.make("audioconvert", null);
+		final Element speexenc = ElementFactory.make("speexenc", null);
+		final Element oggmux = ElementFactory.make("oggmux", null);
 		final Element filesink = ElementFactory.make("filesink", null);
 		filesink.set("location", Config.MESSAGE_FILES_ROOT + receiverName + "/"
 				+ senderName + "-" + stringDate + ".ogg");
-		final Element oggmux = ElementFactory.make("oggmux", null);
-		final Element speexdec = ElementFactory.make("speexdec", null);
-		final Element speexenc = ElementFactory.make("speexenc", null);
 
 		// ############## ADD THEM TO PIPELINE ####################
-		addMany(rtpSource, rtpBin, speexdec, speexenc, oggmux, filesink);
+		addMany(rtpSource, rtpBin, rtpDepay, speexdec, audioresample,
+				audioconvert, speexenc, oggmux, filesink);
 
 		// ####################### CONNECT EVENTS ######################"
 		rtpBin.connect(new Element.PAD_ADDED() {
 			public void padAdded(Element element, Pad pad) {
 				System.out.println("Pad added: " + pad);
 				if (pad.getName().startsWith("recv_rtp_src")) {
-
-					System.out.println("\nGot new input pad: " + pad);
-					Receiver.this.add(rtpDepay);
-					rtpDepay.syncStateWithParent();
-
-					Tool.successOrDie("rtpDepay-speexdec",
-							Element.linkMany(rtpDepay, speexdec));
-					Tool.successOrDie("speexdec-speexenc",
-							Element.linkMany(speexdec, speexenc));
-					Tool.successOrDie("speexenc-oggmux",
-							Element.linkMany(speexenc, oggmux));
 					Tool.successOrDie(
-							"bin-decoder",
+							"rtpBin-depay",
 							pad.link(rtpDepay.getStaticPad("sink")).equals(
 									PadLinkReturn.OK));
 				}
@@ -85,22 +78,24 @@ public class Receiver extends Pipeline {
 
 		Pad pad = rtpBin.getRequestPad("recv_rtp_sink_0");
 
-		Tool.successOrDie("oggmux-sink", Element.linkMany(oggmux, filesink));
 		Tool.successOrDie("udpSource-rtpbin", rtpSource.getStaticPad("src")
 				.link(pad).equals(PadLinkReturn.OK));
+		Tool.successOrDie(
+				"rtpDepay-speexdec-audioresample-speexenc-oggmux-sink", Element
+						.linkMany(rtpDepay, speexdec, audioresample,
+								audioconvert, speexenc, oggmux, filesink));
 
 		pause();
-
 		port = (Integer) rtpSource.get("port");
 
-		final Element rtcpSource = ElementFactory.make("udpsrc", null);
-		rtcpSource.set("port", port + 1);
-		addMany(rtcpSource);
-		Tool.successOrDie(
-				"rtcpSource-rtpbin",
-				rtcpSource.getStaticPad("src")
-						.link(rtpBin.getRequestPad("recv_rtcp_sink_0"))
-						.equals(PadLinkReturn.OK));
+		// final Element rtcpSource = ElementFactory.make("udpsrc", null);
+		// rtcpSource.set("port", port + 1);
+		// addMany(rtcpSource);
+		// Tool.successOrDie(
+		// "rtcpSource-rtpbin",
+		// rtcpSource.getStaticPad("src")
+		// .link(rtpBin.getRequestPad("recv_rtcp_sink_0"))
+		// .equals(PadLinkReturn.OK));
 	}
 
 }
