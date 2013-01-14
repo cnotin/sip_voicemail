@@ -7,6 +7,9 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Main class with main method.
+ */
 public class Main {
 	public static void main(String[] args) {
 		System.out.println("Welcome");
@@ -20,9 +23,9 @@ public class Main {
 		// launch App
 		new App(myIp);
 
-		System.out.println("Bye ?");
+		System.out.println("Press enter to quit.");
 		new java.util.Scanner(System.in).nextLine();
-		System.out.println("See you");
+		System.out.println("Bye!");
 		System.exit(0);
 	}
 

@@ -41,15 +41,18 @@ import se.ltu.M7017E.lab3.App;
  * implementation of JAIN-SIP.
  */
 public class MySipListener implements SipListener {
+	// usefull objects from JAIN
 	private AddressFactory addressFactory;
 	private MessageFactory messageFactory;
 	private HeaderFactory headerFactory;
 	private SdpTool sdpTool;
-
 	private SipStack sipStack;
 
+	/** My IP address (to put in SDP offers) */
 	private String myAddress;
+	/** SIP listening port */
 	private int myPort;
+	/** Main application API */
 	private App app;
 
 	/**
@@ -72,6 +75,7 @@ public class MySipListener implements SipListener {
 		sipInit();
 	}
 
+	/** Process a request (like INVITE, BYE, ACK, CANCEL) */
 	public void processRequest(RequestEvent requestEvent) {
 		Request request = requestEvent.getRequest();
 		ServerTransaction serverTransaction = requestEvent
@@ -118,7 +122,7 @@ public class MySipListener implements SipListener {
 	}
 
 	public void processResponse(ResponseEvent responseEvent) {
-		// this is a UAS (server, !=UAC), no response should be received
+		// this is a UAS (=Server, !=UAC), no response should be received
 	}
 
 	/**
@@ -126,6 +130,7 @@ public class MySipListener implements SipListener {
 	 */
 	private void processAck(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
+		// nothing special to do
 	}
 
 	/**
@@ -139,13 +144,14 @@ public class MySipListener implements SipListener {
 		try {
 			ServerTransaction st = requestEvent.getServerTransaction();
 
+			// create the transaction if not existing yet
 			if (st == null) {
 				st = sipProvider.getNewServerTransaction(request);
 			}
 
 			try {
 				if (st.getState() != TransactionState.COMPLETED) {
-					// get info about client's SDP offer
+					// get info from client's SDP offer
 					SessionDescription clientSdp = null;
 					clientSdp = sdpTool.fromString(new String(request
 							.getRawContent()));
@@ -161,6 +167,7 @@ public class MySipListener implements SipListener {
 						System.out.println("Client wants sound @ " + clientAddr
 								+ ":" + port);
 
+						// get caller and callee names from request
 						String callee = ((SipUri) ((ToHeader) request
 								.getHeader("to")).getAddress().getURI())
 								.getAuthority().getUser();
@@ -172,7 +179,7 @@ public class MySipListener implements SipListener {
 					} else {
 						System.err
 								.println("Client didn't give any port for audio stream");
-						// TODO cancel everything with appropriate message
+						// TODO cancel everything with proper message
 					}
 
 					// create my SDP offer
@@ -199,8 +206,9 @@ public class MySipListener implements SipListener {
 							+ (myRtpListenPort + 1)
 							+ "\n"
 							+ "a=rtpmap:96 speex/16000");
-					// + "a=fmtp:100 mode=\"10,any\"");
+					// + "a=fmtp:96 mode=\"10,any\"");
 
+					// prepare response message
 					Response response = messageFactory.createResponse(
 							Response.OK, request);
 					Address address = addressFactory
@@ -236,16 +244,18 @@ public class MySipListener implements SipListener {
 			ServerTransaction serverTransactionId) {
 		Request request = requestEvent.getRequest();
 		try {
+			// 200 OK
 			Response response = messageFactory.createResponse(200, request);
 			serverTransactionId.sendResponse(response);
-
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(0);
-
 		}
 	}
 
+	/**
+	 * Process the cancel request.
+	 */
 	private void processCancel(RequestEvent requestEvent,
 			ServerTransaction serverTransactionId) {
 		Request request = requestEvent.getRequest();
@@ -266,10 +276,12 @@ public class MySipListener implements SipListener {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(0);
-
 		}
 	}
 
+	/**
+	 * Process timeouts.
+	 */
 	public void processTimeout(javax.sip.TimeoutEvent timeoutEvent) {
 		Transaction transaction;
 		if (timeoutEvent.isServerTransaction()) {
@@ -288,15 +300,13 @@ public class MySipListener implements SipListener {
 	}
 
 	private void sipInit() {
-		SipFactory sipFactory = null;
-		sipStack = null;
-		sipFactory = SipFactory.getInstance();
+		SipFactory sipFactory = SipFactory.getInstance();
 		sipFactory.setPathName("gov.nist");
 		Properties properties = new Properties();
 		properties.setProperty("javax.sip.STACK_NAME", "voicemail");
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+		properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "16");
 		properties.setProperty("gov.nist.javax.sip.DEBUG_LOG",
 				"voicemaildebug.txt");
 		properties.setProperty("gov.nist.javax.sip.SERVER_LOG",
@@ -317,18 +327,17 @@ public class MySipListener implements SipListener {
 		}
 
 		try {
+			// create all the useful factories provided by JAIN
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
 			sdpTool = new SdpTool();
+			// listen!
 			ListeningPoint lp = sipStack.createListeningPoint(myAddress,
 					myPort, "udp");
 
-			MySipListener listener = this;
-
 			SipProvider sipProvider = sipStack.createSipProvider(lp);
-			sipProvider.addSipListener(listener);
-
+			sipProvider.addSipListener(this);
 		} catch (Exception ex) {
 			System.err.println(ex.getMessage());
 			ex.printStackTrace();
@@ -338,15 +347,15 @@ public class MySipListener implements SipListener {
 
 	public void processTransactionTerminated(
 			TransactionTerminatedEvent transactionTerminatedEvent) {
-		if (transactionTerminatedEvent.isServerTransaction())
+		if (transactionTerminatedEvent.isServerTransaction()) {
 			System.out.println("Transaction terminated event received "
 					+ transactionTerminatedEvent.getServerTransaction()
 							.getBranchId());
-		else
+		} else {
 			System.out.println("Transaction terminated "
 					+ transactionTerminatedEvent.getClientTransaction()
 							.getBranchId());
-
+		}
 	}
 
 	public void processDialogTerminated(

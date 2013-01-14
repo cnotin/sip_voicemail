@@ -13,6 +13,14 @@ import javax.sdp.SessionDescription;
 public class SdpTool {
 	SdpFactory sdpFactory = SdpFactory.getInstance();
 
+	/**
+	 * Retrieve first (if several) port advertised in SDP offer on which the
+	 * client wants to receive audio media.
+	 * 
+	 * @param sdp
+	 *            the SDP offer to search within
+	 * @return the port, or -1 if not found
+	 */
 	public int getAudioMediaPort(SessionDescription sdp) {
 		int port = -1;
 		try {
@@ -29,6 +37,13 @@ public class SdpTool {
 		return port;
 	}
 
+	/**
+	 * Retrieve IP address from SDP offer.
+	 * 
+	 * @param sdp
+	 *            the SDP offer to search within
+	 * @return the IP address, as a string, or null if not found
+	 */
 	public String getIpAddress(SessionDescription sdp) {
 		String ret = null;
 		try {
@@ -39,6 +54,14 @@ public class SdpTool {
 		return ret;
 	}
 
+	/**
+	 * Create a SDP payload populated from a string. For format, please refer to
+	 * {@link SdpFactory#createSessionDescription(String)}
+	 * 
+	 * @param sdp
+	 *            SDP message as a String
+	 * @return the SDP message populated, or null if a parsing problem happens
+	 */
 	public SessionDescription fromString(String sdp) {
 		SessionDescription ret = null;
 		try {
