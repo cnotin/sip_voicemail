@@ -1,5 +1,6 @@
 package se.ltu.M7017E.lab3.audio;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -54,6 +55,13 @@ public class Receiver extends Pipeline {
 		final Element speexenc = ElementFactory.make("speexenc", null);
 		final Element oggmux = ElementFactory.make("oggmux", null);
 		final Element filesink = ElementFactory.make("filesink", null);
+
+		// create the folder if it does not exist
+		if (!new File(Config.MESSAGE_FILES_ROOT + receiverName).exists()) {
+
+			new File(Config.MESSAGE_FILES_ROOT + receiverName).mkdirs();
+		}
+
 		filesink.set("location", Config.MESSAGE_FILES_ROOT + receiverName + "/"
 				+ senderName + "-" + stringDate + ".ogg");
 
@@ -85,7 +93,7 @@ public class Receiver extends Pipeline {
 						.linkMany(rtpDepay, speexdec, audioresample,
 								audioconvert, speexenc, oggmux, filesink));
 
-		play();
+		pause();
 		port = (Integer) rtpSource.get("port");
 
 		// final Element rtcpSource = ElementFactory.make("udpsrc", null);
